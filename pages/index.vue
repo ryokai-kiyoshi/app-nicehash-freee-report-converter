@@ -79,22 +79,63 @@ export default class Index extends Vue {
     return(reportList)
   }
 
+  findIncome( datetime: any, income: any[]) :any {
+    for( let item of income){
+      // console.log("compare "+datetime+" | "+item.datetime)
+      if( item.datetime.valueOf() == datetime.valueOf()){
+        return item
+      }
+    }
+    return null
+  }
+
   convertFreeeIncomeReport(nicehash:any[]) :any[] {
     let freee = []
+    let income :any[]= []
+    let fee = []
 
+    // sorting income / fee
     for(let i = 0; i < nicehash.length; ++i){
       const nhItem = nicehash[i]
 
       // filter
       if(nhItem.purpose == 'Legacy transfer' || nhItem.purpose == 'Repayment' || nhItem.purpose == 'Hashpower mining' ) {
+        income.push(nhItem)
+      }else if(nhItem.purpose == 'Hashpower mining fee' ){
+        fee.push(nhItem)
+      }
+    }
+    // merge 
+    // mining + (-fee)
+    fee.forEach(item => {
+      const target = this.findIncome(item.datetime, income)
+      if(target){
+        console.log("merge income[pre]:"+target.amountBtc+" | "+target.amountJpy)
+        console.log("merge fee        :"+item.amountBtc+" | "+item.amountJpy)
+        
+        
+        target.amountBtc += item.amountBtc
+        target.amountJpy += item.amountJpy
+
+        console.log("merge fee:"+target.amountBtc+" | "+target.amountJpy)
+      }
+
+    })
+
+
+    for(let i = 0; i < income.length; ++i){
+      const nhItem = income[i]
+
+      // filter
+      // if(nhItem.purpose == 'Legacy transfer' || nhItem.purpose == 'Repayment' || nhItem.purpose == 'Hashpower mining' ) {
 
         const fDate = new Date(nhItem.datetime.format('YYYY-MM-DD'))
         const fCategory = '収入'
         const fAccount = '売上高'
-        const fAmount = nhItem.amountJpy
+        const fAmount = Math.floor(nhItem.amountJpy)
         const fTaxType = '課税売上10%'
         const fDueDate = ''
-        const fSettlementAccount = 'nicehash'
+        const fSettlementAccount = 'nicehash(BTC)'
         const fCustomer = 'nicehash'
         const fItem = 'BTCマイニング'
         const fDepartment = '仮想通貨'
@@ -118,7 +159,7 @@ export default class Index extends Vue {
 
         console.log("freee["+i+"]:"+JSON.stringify(freeeItem))
         freee.push(freeeItem)
-      }
+      // }
     }
     return(freee)
   }
