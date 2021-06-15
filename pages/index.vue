@@ -10,7 +10,7 @@
             <div class="row">
                 <div class="col">
                     <div class="bg-light card mb-3">
-                        <div class="card-header">nicehash支払い実績データ</div>
+                        <div class="card-header">nicehash支払い実績データ→売り上げデータ</div>
                         <div class="card-body">
                             <div class="container" style="height: 200px; border-style: dotted; " 
                               @dragover.prevent.stop="dragAction" 
@@ -27,6 +27,28 @@
                     </div>
                 </div>
             </div>
+
+            <div class="row">
+                <div class="col">
+                    <div class="bg-light card mb-3">
+                        <div class="card-header">nicehash支払い実績データ→仕入データ</div>
+                        <div class="card-body">
+                            <div class="container" style="height: 200px; border-style: dotted; " 
+                              @dragover.prevent.stop="dragAction" 
+                              @drop.prevent.stop="dropNicehashReport4Stock">
+                                <div class="row justify-content-center">
+                                    <div class="col-md-4">
+                                        <div style="text-align: center;">
+                                            ここにファイルをドロップ
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <div class="row justify-content-center">
                 <div class="col-md-4" style="text-align: center;">
                     <button type="button rounded-pill" class="btn btn-dark">generate</button>
@@ -129,15 +151,122 @@ export default class Index extends Vue {
       // filter
       // if(nhItem.purpose == 'Legacy transfer' || nhItem.purpose == 'Repayment' || nhItem.purpose == 'Hashpower mining' ) {
 
+        let fDate = new Date(nhItem.datetime.format('YYYY-MM-DD'))
+        let fCategory = '収入'
+        let fAccount = '売上高'
+        let fAmount = Math.floor(nhItem.amountJpy)
+        let fTaxType = '課税売上10%'
+        let fDueDate = ''
+        let fSettlementAccount = 'nicehash(BTC)'
+        let fCustomer = 'nicehash'
+        let fItem = 'BTCマイニング'
+        let fDepartment = '仮想通貨'
+        let fMemo = ''
+        let fRemarks = 'BTC: '+nhItem.amountBtc+', BTC/JPY: '+nhItem.exchangeRate+', op:'+nhItem.purpose
+
+        let freeeItem = {
+          date: fDate, 
+          category: fCategory,
+          account: fAccount,
+          amount: fAmount,
+          taxType: fTaxType,
+          dueDate: fDueDate,
+          settlementAccount: fSettlementAccount,
+          customer: fCustomer,
+          item: fItem,
+          department: fDepartment,
+          memo: fMemo,
+          remarks: fRemarks
+        }
+
+        console.log("freee["+i+"]:"+JSON.stringify(freeeItem))
+        freee.push(freeeItem)
+
+
+        fDate = new Date(nhItem.datetime.format('YYYY-MM-DD'))
+        fCategory = '支出'
+        fAccount = '仕入高'
+        fAmount = Math.floor(nhItem.amountJpy)
+        fTaxType = '課税売上10%'
+        fDueDate = ''
+        fSettlementAccount = 'nicehash(BTC)'
+        fCustomer = 'nicehash'
+        fItem = '仮想通貨'
+        fDepartment = '仮想通貨'
+        fMemo = ''
+        fRemarks = 'BTC: '+nhItem.amountBtc+', BTC/JPY: '+nhItem.exchangeRate+', op:'+nhItem.purpose
+
+        freeeItem = {
+          date: fDate, 
+          category: fCategory,
+          account: fAccount,
+          amount: fAmount,
+          taxType: fTaxType,
+          dueDate: fDueDate,
+          settlementAccount: fSettlementAccount,
+          customer: fCustomer,
+          item: fItem,
+          department: fDepartment,
+          memo: fMemo,
+          remarks: fRemarks
+        }
+
+        console.log("freee["+i+"]:"+JSON.stringify(freeeItem))
+        freee.push(freeeItem)
+      // }
+    }
+    return(freee)
+  }
+  
+  convertFreeeStockReport(nicehash:any[]) :any[] {
+    let freee = []
+    let income :any[]= []
+    let fee = []
+
+    // sorting income / fee
+    for(let i = 0; i < nicehash.length; ++i){
+      const nhItem = nicehash[i]
+
+      // filter
+      if(nhItem.purpose == 'Legacy transfer' || nhItem.purpose == 'Repayment' || nhItem.purpose == 'Hashpower mining' ) {
+        income.push(nhItem)
+      }else if(nhItem.purpose == 'Hashpower mining fee' ){
+        fee.push(nhItem)
+      }
+    }
+    // merge 
+    // mining + (-fee)
+    fee.forEach(item => {
+      const target = this.findIncome(item.datetime, income)
+      if(target){
+        console.log("merge income[pre]:"+target.amountBtc+" | "+target.amountJpy)
+        console.log("merge fee        :"+item.amountBtc+" | "+item.amountJpy)
+        
+        
+        target.amountBtc += item.amountBtc
+        target.amountJpy += item.amountJpy
+
+        console.log("merge fee:"+target.amountBtc+" | "+target.amountJpy)
+      }
+
+    })
+
+
+    for(let i = 0; i < income.length; ++i){
+      const nhItem = income[i]
+
+      // filter
+      // if(nhItem.purpose == 'Legacy transfer' || nhItem.purpose == 'Repayment' || nhItem.purpose == 'Hashpower mining' ) {
+
         const fDate = new Date(nhItem.datetime.format('YYYY-MM-DD'))
-        const fCategory = '収入'
-        const fAccount = '売上高'
+        const fCategory = '支出'
+        const fAccount = '仕入高'
         const fAmount = Math.floor(nhItem.amountJpy)
         const fTaxType = '課税売上10%'
         const fDueDate = ''
         const fSettlementAccount = 'nicehash(BTC)'
         const fCustomer = 'nicehash'
-        const fItem = 'BTCマイニング'
+        const fItem = '仮想通貨'
         const fDepartment = '仮想通貨'
         const fMemo = ''
         const fRemarks = 'BTC: '+nhItem.amountBtc+', BTC/JPY: '+nhItem.exchangeRate+', op:'+nhItem.purpose
@@ -163,8 +292,44 @@ export default class Index extends Vue {
     }
     return(freee)
   }
-
   buildFreeeIncomeReport(freee: any[]){
+    let slips = [['発生日',	'収支区分',	'勘定科目',	'金額',	'税区分',	'決済期日',	'決済口座',	'取引先',	'品目',	'部門',	'メモタグ',	'備考' ]];
+
+    
+    for( let i = 0; i < freee.length; ++i){
+
+      const item = freee[i]
+
+      const row = [item.date, item.category, item.account, item.amount, item.taxType,
+       item.dueDate, item.settlementAccount, item.customer, item.item, item.department, item.memo, item.remarks
+      ]
+      slips.push(row)
+    }
+
+
+    const wb = XLSX.utils.book_new()
+   /* convert an array of arrays in JS to a CSF spreadsheet */
+    const ws = XLSX.utils.aoa_to_sheet(slips, {cellDates:false});
+    XLSX.utils.book_append_sheet(wb, ws, "仕入データ");
+
+    // 新しく作成するエクセルファイルの作成オプションを設定します。
+    const opts : WritingOptions = {
+      bookType: "xlsx",
+      bookSST: false,
+      type: 'array',
+      compression: true
+    }
+    
+    // 上記オプションを使って Blobオブジェクトに出力します。
+    const blob = new Blob(
+      [XLSX.write(wb, opts)],
+      {type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}
+    );
+
+    this.downloadFile(blob, 'test.xlsx')
+  }
+
+  buildFreeeStockReport(freee: any[]){
     let slips = [['発生日',	'収支区分',	'勘定科目',	'金額',	'税区分',	'決済期日',	'決済口座',	'取引先',	'品目',	'部門',	'メモタグ',	'備考' ]];
 
     
@@ -240,6 +405,19 @@ export default class Index extends Vue {
 
   }
 
+  public async dropNicehashReport4Stock(evt : DragEvent) : Promise<void> {
+    console.log(" drop.")
+    if(evt.dataTransfer){
+      let _files = evt.dataTransfer.files
+
+      if(_files && _files.length > 0){
+        const nh = await this.parseNicehashReport(_files[0])
+        const freee = this.convertFreeeStockReport(nh)
+        const income = this.buildFreeeStockReport(freee)
+      }
+    }
+
+  }
   async readBinFileSync(file : File) : Promise<Uint8Array>{
     return new Promise((resolve, reject) => {
   
